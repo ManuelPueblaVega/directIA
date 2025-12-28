@@ -3,137 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Director de Orquesta IA - Full Control</title>
+    <title>Director de Orquesta - Versión Universal</title>
     <style>
         body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background: #1a1a1a; 
-            color: white; 
+            font-family: 'Segoe UI', sans-serif; 
+            background: #0d0d0d; 
+            color: #e0e0e0; 
             display: flex; 
             flex-direction: column; 
             align-items: center; 
-            margin: 0;
             padding: 20px;
         }
         
-        h1 { margin-bottom: 10px; text-shadow: 0 0 10px #00ffcc; }
+        .main-container { width: 100%; max-width: 640px; }
 
-        /* Contenedor principal de video y canvas */
+        /* Video Stage */
         .stage { 
             position: relative; 
-            width: 640px; 
-            height: 480px; 
-            margin: 20px auto;
-            border: 4px solid #333;
+            width: 100%; 
+            padding-bottom: 75%; 
+            background: #000;
             border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
-            background: #000;
+            border: 1px solid #333;
+            margin-bottom: 20px;
         }
 
-        /* Video y Canvas superpuestos */
-        video { 
-            width: 100%; 
-            height: 100%; 
-            object-fit: cover; 
-            transform: scaleX(-1); /* Efecto espejo */
-        }
-        canvas { 
-            position: absolute; 
-            left: 0; 
-            top: 0; 
-            width: 100%; 
-            height: 100%; 
-            transform: scaleX(-1); /* Efecto espejo para coincidir con el video */
+        video, canvas { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            transform: scaleX(-1); object-fit: cover;
         }
 
         /* Panel de Control */
-        .dashboard {
-            display: flex;
-            gap: 20px;
-            width: 640px;
-            background: #2d2d2d;
-            padding: 15px;
-            border-radius: 10px;
-            margin-top: 10px;
-            justify-content: space-around;
-        }
-
-        .metric-box {
-            text-align: center;
-            width: 45%;
-        }
-
-        .bar-container {
-            width: 100%;
-            height: 20px;
-            background: #444;
-            border-radius: 10px;
-            overflow: hidden;
-            margin-top: 5px;
-        }
-
-        .bar-fill {
-            height: 100%;
-            transition: width 0.1s linear;
-        }
-
-        #speedBar { background: linear-gradient(90deg, #ffcc00, #ff6600); width: 50%; }
-        #volBar { background: linear-gradient(90deg, #00ccff, #0066ff); width: 80%; }
-
-        .file-input {
-            margin: 20px;
+        .controls {
+            background: #1a1a1a;
             padding: 20px;
-            border: 2px dashed #555;
-            border-radius: 10px;
+            border-radius: 12px;
             text-align: center;
-            width: 600px;
+            border: 1px solid #333;
         }
 
-        .instructions {
-            display: flex;
-            justify-content: space-between;
-            width: 640px;
-            font-size: 0.9em;
-            color: #aaa;
-            margin-bottom: 10px;
-        }
-        
-        .hand-label { font-weight: bold; color: #fff; padding: 5px 10px; border-radius: 4px;}
-        .left-hand { background: #0066ff; }
-        .right-hand { background: #ff6600; }
-
-        /* Mensaje de error visible */
-        #error-msg {
-            color: #ff4444;
-            font-weight: bold;
-            display: none;
-            margin-top: 10px;
-            background: rgba(255,0,0,0.1);
-            padding: 10px;
-            border-radius: 5px;
-        }
-
-        /* Botón gigante de Play para asegurar inicio */
-        #start-btn {
-            display: none;
-            background: #00ffcc;
+        /* Botón Start */
+        #btn-start {
+            background: #00e676;
             color: #000;
             border: none;
             padding: 15px 30px;
-            font-size: 1.2rem;
-            font-weight: bold;
+            font-size: 1.1rem;
+            font-weight: 800;
             border-radius: 50px;
             cursor: pointer;
-            margin-top: 15px;
-            box-shadow: 0 0 15px #00ffcc;
-            transition: transform 0.2s;
+            margin: 15px 0;
+            display: none; 
+            box-shadow: 0 0 15px rgba(0, 230, 118, 0.4);
+            animation: pulse 2s infinite;
         }
-        #start-btn:hover { transform: scale(1.05); }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+
+        /* Consola de Diagnóstico */
+        .console-log {
+            background: #000;
+            color: #00ff00;
+            font-family: 'Consolas', monospace;
+            font-size: 0.85rem;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 15px;
+            text-align: left;
+            height: 120px;
+            overflow-y: auto;
+            border-left: 3px solid #00e676;
+            white-space: pre-wrap;
+        }
+
+        /* Barras */
+        .bars-area { display: flex; gap: 10px; margin-top: 15px; }
+        .metric { flex: 1; background: #222; padding: 10px; border-radius: 8px; }
+        .bar-track { height: 8px; background: #444; border-radius: 4px; margin-top: 5px; overflow: hidden; }
+        .bar-val { height: 100%; width: 0%; transition: width 0.1s; }
+        #vol-val { background: #29b6f6; }
+        #spd-val { background: #ffa726; }
 
     </style>
-    
-    <!-- Librerías de MediaPipe -->
+
+    <!-- MediaPipe -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
@@ -141,266 +94,222 @@
 </head>
 <body>
 
-    <h1>🎵 Director de Orquesta Pro</h1>
+    <div class="main-container">
+        <h1>🎵 Director de Orquesta V5</h1>
 
-    <div class="file-input">
-        <h3 style="margin-top:0;">Paso 1: Carga tu música</h3>
-        <input type="file" id="audioFile" accept="audio/*">
-        <br>
-        
-        <!-- Botón manual explicito -->
-        <button id="start-btn">▶ INICIAR ORQUESTA</button>
+        <div class="controls">
+            <!-- Aceptamos CUALQUIER audio para evitar bloqueos -->
+            <input type="file" id="audioFile" accept="audio/*">
+            
+            <button id="btn-start">▶ INICIAR ORQUESTA</button>
 
-        <br><br>
-        <audio id="audioPlayer" controls loop style="width: 80%;"></audio>
-        <div id="status" style="margin-top:10px; color:#00ffcc;">Verificando cámara...</div>
-        <div id="error-msg"></div>
-    </div>
+            <!-- Reproductor nativo visible -->
+            <audio id="audioPlayer" controls style="width: 100%; margin-top:15px;"></audio>
+            
+            <div id="console" class="console-log">Inicializando sistema...</div>
+        </div>
 
-    <div class="instructions">
-        <span class="hand-label left-hand">🤚 Mano Izquierda: VOLUMEN (Arriba/Abajo)</span>
-        <span class="hand-label right-hand">✋ Mano Derecha: VELOCIDAD (Agitar)</span>
-    </div>
-
-    <div class="stage">
-        <!-- 'playsinline' es crucial para evitar errores en móviles/safari -->
-        <video id="input_video" playsinline></video>
-        <canvas id="output_canvas"></canvas>
-    </div>
-
-    <div class="dashboard">
-        <div class="metric-box">
-            <div>Volumen: <span id="volText">100%</span></div>
-            <div class="bar-container">
-                <div id="volBar" class="bar-fill"></div>
+        <div class="bars-area">
+            <div class="metric">
+                <small>Volumen (Izq)</small>
+                <div class="bar-track"><div id="vol-val" class="bar-val"></div></div>
+                <span id="vol-txt">100%</span>
+            </div>
+            <div class="metric">
+                <small>Velocidad (Der)</small>
+                <div class="bar-track"><div id="spd-val" class="bar-val"></div></div>
+                <span id="spd-txt">1.0x</span>
             </div>
         </div>
-        <div class="metric-box">
-            <div>Velocidad: <span id="speedText">1.0x</span></div>
-            <div class="bar-container">
-                <div id="speedBar" class="bar-fill"></div>
-            </div>
+
+        <div class="stage">
+            <video id="input_video" playsinline muted autoplay></video>
+            <canvas id="output_canvas"></canvas>
         </div>
     </div>
 
 <script>
-    // Referencias al DOM
+    // --- REFERENCIAS ---
     const videoElement = document.getElementById('input_video');
     const canvasElement = document.getElementById('output_canvas');
     const canvasCtx = canvasElement.getContext('2d');
     const audioPlayer = document.getElementById('audioPlayer');
-    const statusText = document.getElementById('status');
-    const errorMsg = document.getElementById('error-msg');
-    const startBtn = document.getElementById('start-btn');
+    const btnStart = document.getElementById('btn-start');
+    const consoleDiv = document.getElementById('console');
     
-    // UI Elements
-    const volBar = document.getElementById('volBar');
-    const volText = document.getElementById('volText');
-    const speedBar = document.getElementById('speedBar');
-    const speedText = document.getElementById('speedText');
+    // UI Refs
+    const volBar = document.getElementById('vol-val');
+    const volTxt = document.getElementById('vol-txt');
+    const spdBar = document.getElementById('spd-val');
+    const spdTxt = document.getElementById('spd-txt');
 
-    // Estado del sistema
-    let previousWristX = 0;
-    let previousWristY = 0;
-    
-    // Valores actuales (suavizados)
-    let currentVolume = 1.0;
-    let currentSpeed = 1.0;
-    
-    // Objetivos (hacia donde queremos ir)
-    let targetVolume = 1.0;
-    let targetSpeed = 1.0;
-    
-    // Configuración de suavizado (0.0 a 1.0, menor es más suave pero más lento)
-    const LERP_FACTOR = 0.1; 
+    // Estado Lógico
+    let prevX = 0, prevY = 0;
+    let currVol = 1, currSpd = 1;
+    let targetVol = 1, targetSpd = 1;
+    const LERP = 0.1;
 
-    // Función auxiliar para mostrar errores
-    function showError(msg) {
-        console.error(msg);
-        errorMsg.style.display = 'block';
-        errorMsg.innerText = "Error: " + msg;
-        statusText.style.color = 'red';
-        statusText.innerText = "Detenido por error.";
+    // --- SISTEMA DE LOGS ---
+    function log(msg, type="info") {
+        const time = new Date().toLocaleTimeString();
+        let color = "#00ff00"; // Info verde
+        if(type === "error") color = "#ff4444"; // Error rojo
+        if(type === "warn") color = "#ffbb33"; // Warning naranja
+        if(type === "sys") color = "#00ffff"; // Sistema cyan
+        
+        consoleDiv.innerHTML += `<div style="color:${color}">[${time}] ${msg}</div>`;
+        consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        console.log(`[${type}] ${msg}`);
     }
 
-    // --- MANEJO ROBUSTO DE AUDIO ---
-
-    // 1. Al seleccionar archivo
-    document.getElementById('audioFile').onchange = function(event) {
-        const file = event.target.files[0];
-        if(!file) return;
-
-        // Resetear estado
-        statusText.innerText = "Cargando archivo de audio...";
-        startBtn.style.display = 'none';
-        errorMsg.style.display = 'none';
-
-        const url = URL.createObjectURL(file);
-        audioPlayer.src = url;
-        audioPlayer.load(); // Forzar carga
-    };
-
-    // 2. Cuando el navegador confirma que puede reproducir el audio
-    audioPlayer.oncanplay = function() {
-        statusText.innerText = "¡Audio listo! Presiona el botón INICIAR.";
-        startBtn.style.display = 'inline-block'; // Mostrar botón grande
-    };
-
-    // 3. Manejar error de carga de audio
-    audioPlayer.onerror = function() {
-        showError("No se pudo cargar el audio. El formato podría no ser compatible.");
-    };
-
-    // 4. Acción del botón de inicio
-    startBtn.onclick = function() {
-        const playPromise = audioPlayer.play();
+    // --- CHEQUEO DE COMPATIBILIDAD ---
+    window.onload = function() {
+        const a = document.createElement('audio');
+        log("Probando soporte de audio del navegador...", "sys");
+        const mp3 = a.canPlayType('audio/mpeg');
+        const ogg = a.canPlayType('audio/ogg');
+        const wav = a.canPlayType('audio/wav');
         
-        if (playPromise !== undefined) {
-            playPromise.then(_ => {
-                statusText.innerText = "¡En vivo! Mueve tus manos.";
-                startBtn.style.display = 'none'; // Ocultar botón al iniciar
-            })
-            .catch(error => {
-                console.warn("Error al reproducir:", error);
-                showError("El navegador bloqueó el audio. Usa los controles nativos.");
-            });
+        log(`Soporte MP3: ${mp3 ? mp3 : "NO"}`, mp3 ? "info" : "error");
+        log(`Soporte OGG: ${ogg ? ogg : "NO"}`, "info");
+        log(`Soporte WAV: ${wav ? wav : "NO"}`, "info");
+        
+        if(!mp3) {
+            log("⚠️ TU NAVEGADOR NO SOPORTA MP3. Usa archivos .WAV o .OGG", "error");
+        } else {
+            log("Selecciona un archivo para empezar.", "sys");
         }
     };
 
+    // --- CARGA DE AUDIO ---
+    const fileInput = document.getElementById('audioFile');
+
+    fileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Limpiar logs anteriores
+        consoleDiv.innerHTML = "";
+        log(`Cargando: "${file.name}"`, "info");
+        log(`Tipo: ${file.type}`, "info");
+
+        // Reiniciar estado
+        btnStart.style.display = 'none';
+        
+        try {
+            const objectUrl = URL.createObjectURL(file);
+            audioPlayer.src = objectUrl;
+            audioPlayer.load(); 
+        } catch (err) {
+            log(`Error creando URL: ${err.message}`, "error");
+        }
+    });
+
+    // --- EVENTOS DEL REPRODUCTOR ---
+    audioPlayer.addEventListener('canplay', () => {
+        log("✅ Archivo aceptado. Listo para tocar.", "info");
+        btnStart.style.display = 'inline-block';
+    });
+    
+    audioPlayer.addEventListener('error', (e) => {
+        const err = audioPlayer.error;
+        let msg = "Desconocido";
+        if(err) {
+            if(err.code === 4) msg = "FORMATO NO SOPORTADO (SRC_NOT_SUPPORTED).";
+            if(err.code === 3) msg = "DECODIFICACIÓN FALLIDA.";
+        }
+        log(`❌ ERROR FATAL: ${msg}`, "error");
+        log("💡 SOLUCIÓN: Prueba convertir tu audio a formato .WAV", "warn");
+    });
+
+    // --- BOTÓN DE INICIO ---
+    btnStart.addEventListener('click', () => {
+        audioPlayer.play()
+            .then(() => {
+                log("🎶 Reproduciendo...", "info");
+                btnStart.style.display = 'none';
+            })
+            .catch(err => {
+                log(`Error Play: ${err.message}`, "error");
+            });
+    });
+
+    // --- LÓGICA DE DIRECTOR ---
     function onResults(results) {
-        // Preparar canvas
         canvasElement.width = videoElement.videoWidth;
         canvasElement.height = videoElement.videoHeight;
         canvasCtx.save();
         canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-        
-        // Dibujar esqueletos si existen
+
         if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-            
-            // Iterar sobre todas las manos detectadas
             for (const [index, landmarks] of results.multiHandLandmarks.entries()) {
-                
-                const classification = results.multiHandedness[index];
-                const isRightHand = classification.label === 'Right';
-                const isLeftHand = classification.label === 'Left';
+                const label = results.multiHandedness[index].label;
+                // Selfie mode: Right = Tu mano derecha
+                const isRight = label === 'Right';
+                const isLeft = label === 'Left';
 
-                // Dibujar la mano con color diferente según cual sea
-                const color = isRightHand ? '#FF6600' : '#0066FF';
-                drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {color: color, lineWidth: 4});
-                drawLandmarks(canvasCtx, landmarks, {color: '#FFFFFF', lineWidth: 2, radius: 3});
+                const color = isRight ? '#ffa726' : '#29b6f6';
+                drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {color: color, lineWidth: 3});
+                drawLandmarks(canvasCtx, landmarks, {color: '#fff', lineWidth: 1, radius: 3});
 
-                // --- LÓGICA MANO IZQUIERDA (VOLUMEN - EJE Y) ---
-                if (isLeftHand) {
-                    const wrist = landmarks[0]; // Muñeca
-                    let rawVol = 1 - wrist.y;
-                    if (rawVol > 1) rawVol = 1;
-                    if (rawVol < 0) rawVol = 0;
-                    targetVolume = rawVol;
-                    
-                    canvasCtx.fillStyle = "#0066FF";
-                    canvasCtx.font = "30px Arial";
-                    canvasCtx.fillText(`Vol: ${(targetVolume*100).toFixed(0)}%`, wrist.x * canvasElement.width, wrist.y * canvasElement.height - 20);
+                // Mano Izquierda: Volumen
+                if (isLeft) {
+                    targetVol = Math.max(0, Math.min(1, 1 - landmarks[0].y));
+                    canvasCtx.fillStyle = color;
+                    canvasCtx.fillText(`Vol: ${(targetVol*100).toFixed(0)}%`, landmarks[0].x * canvasElement.width, landmarks[0].y * canvasElement.height);
                 }
 
-                // --- LÓGICA MANO DERECHA (VELOCIDAD - AGITACIÓN) ---
-                if (isRightHand) {
-                    const wrist = landmarks[0];
-                    const movement = Math.sqrt(
-                        Math.pow((wrist.x - previousWristX), 2) + 
-                        Math.pow((wrist.y - previousWristY), 2)
-                    );
+                // Mano Derecha: Velocidad
+                if (isRight) {
+                    const x = landmarks[0].x;
+                    const y = landmarks[0].y;
+                    const dist = Math.sqrt(Math.pow(x - prevX, 2) + Math.pow(y - prevY, 2));
+                    prevX = x; prevY = y;
 
-                    previousWristX = wrist.x;
-                    previousWristY = wrist.y;
-
-                    let velocity = movement * 40; 
-                    let calculatedSpeed = 0.5 + velocity; 
-                    if (calculatedSpeed > 3.0) calculatedSpeed = 3.0;
-                    if (calculatedSpeed < 0.5) calculatedSpeed = 0.5;
-
-                    targetSpeed = calculatedSpeed;
-
-                    canvasCtx.fillStyle = "#FF6600";
-                    canvasCtx.font = "30px Arial";
-                    canvasCtx.fillText(`${targetSpeed.toFixed(1)}x`, wrist.x * canvasElement.width, wrist.y * canvasElement.height - 20);
+                    let velocity = dist * 35; 
+                    targetSpd = Math.max(0.1, Math.min(3.0, 0.5 + velocity));
+                    
+                    canvasCtx.fillStyle = color;
+                    canvasCtx.fillText(`x${targetSpd.toFixed(1)}`, x * canvasElement.width, y * canvasElement.height);
                 }
             }
-
         } else {
-            targetSpeed = 1.0;
+            targetSpd = 1.0;
         }
 
-        // --- APLICAR FISICA (LERP) ---
-        currentVolume += (targetVolume - currentVolume) * LERP_FACTOR;
-        currentSpeed += (targetSpeed - currentSpeed) * LERP_FACTOR;
+        // Suavizado
+        currVol += (targetVol - currVol) * LERP;
+        currSpd += (targetSpd - currSpd) * LERP;
 
-        // --- ACTUALIZAR AUDIO Y UI ---
-        if(!audioPlayer.paused && !isNaN(audioPlayer.duration)) {
-            audioPlayer.volume = currentVolume;
-            audioPlayer.playbackRate = currentSpeed;
-            
-            volBar.style.width = `${currentVolume * 100}%`;
-            volText.innerText = `${Math.round(currentVolume * 100)}%`;
-            
-            speedBar.style.width = `${(currentSpeed / 3) * 100}%`;
-            speedText.innerText = `${currentSpeed.toFixed(2)}x`;
+        if (!audioPlayer.paused) {
+            audioPlayer.volume = currVol;
+            if (currSpd < 0.1) currSpd = 0.1;
+            audioPlayer.playbackRate = currSpd;
+
+            // UI
+            volBar.style.width = (currVol * 100) + "%";
+            volTxt.innerText = Math.round(currVol * 100) + "%";
+            let spdP = (currSpd / 3) * 100;
+            spdBar.style.width = Math.min(spdP, 100) + "%";
+            spdTxt.innerText = currSpd.toFixed(1) + "x";
         }
-
         canvasCtx.restore();
     }
 
-    // Configuración MediaPipe Hands
-    const hands = new Hands({locateFile: (file) => {
-        return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
-    }});
-
-    hands.setOptions({
-        maxNumHands: 2,
-        modelComplexity: 1,
-        minDetectionConfidence: 0.5,
-        minTrackingConfidence: 0.5
-    });
-
+    // --- CÁMARA ---
+    const hands = new Hands({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
+    hands.setOptions({ maxNumHands: 2, modelComplexity: 1, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
     hands.onResults(onResults);
 
-    // Inicialización segura de la cámara
-    function startCamera() {
-        // Verificar soporte básico
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            showError("Tu navegador no soporta acceso a la cámara. Prueba usar Chrome o Firefox.");
-            return;
-        }
-
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
         const camera = new Camera(videoElement, {
-            onFrame: async () => {
-                try {
-                    await hands.send({image: videoElement});
-                } catch(e) {
-                    // Silenciar errores de procesamiento de frames vacíos
-                }
-            },
-            width: 640,
-            height: 480
+            onFrame: async () => { try { await hands.send({image: videoElement}); } catch(e){} },
+            width: 640, height: 480
         });
-        
-        camera.start()
-            .then(() => {
-                statusText.innerText = "Cámara lista. Carga una canción.";
-                errorMsg.style.display = 'none';
-            })
-            .catch(err => {
-                // Manejar error específico de "NotSupportedError" o permisos
-                let msg = err.message || err;
-                if (msg.toString().includes("NotSupportedError")) {
-                    msg = "No se detectó una fuente de video válida o el navegador la bloqueó.";
-                }
-                showError("Error iniciando cámara: " + msg);
-            });
+        camera.start().catch(e => log(`Error Cámara: ${e.message}`, "error"));
+    } else {
+        log("Cámara no soportada.", "error");
     }
-
-    // Iniciar
-    startCamera();
-
 </script>
 
 </body>
